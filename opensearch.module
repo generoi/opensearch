@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function opensearch_menu() {
+  $items = array();
+
+  $items['opensearch.xml'] = array(
+    'page callback' => 'opensearch_page',
+    'access arguments' => array('search content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_preprocess_html().
+ */
+function opensearch_preprocess_html(&$vars) {
+  $element = array(
+    '#tag' => 'link',
+    '#attributes' => array(
+      'rel' => 'search',
+      'type' => 'application/opensearchdescription+xml',
+      'href' => url('opensearch.xml', array('absolute' => TRUE)),
+      'title' => variable_get('site_name'),
+    ),
+  );
+  drupal_add_html_head($element, 'opensearch');
+}
+
+/**
+ * Implements hook_page().
+ */
+function opensearch_page() {
+  require_once DRUPAL_ROOT . '/includes/xmlrpcs.inc';
+
+  global $base_url;
+  $favicon = theme_get_setting('favicon');
+  $search_url = url('content-finder/', array('absolute' => TRUE));
+  $site_name = variable_get('site_name');
+  $site_description = variable_get('site_slogan');
+  $front = url('<front>', array('absolute' => TRUE));
+
+  $content = ''
+    . '<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">'
+      . '<ShortName>' . $site_name . '</ShortName>'
+      . '<Description>' . $site_description . '</Description>'
+      . '<Url type="text/html" method="get" template="' . $search_url . '{searchTerms}"/>'
+      . '<Image width="16" height="16">' . $favicon . '</Image>'
+      . '<InputEncoding>UTF-8</InputEncoding>'
+      . '<SearchForm>' . $front . '</SearchForm>'
+    . '</OpenSearchDescription>';
+    xmlrpc_server_output($content);
+}
